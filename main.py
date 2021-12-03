@@ -1,17 +1,52 @@
 import torch
+from torch import nn
+import torch.nn.functional as F
 from torchvision import datasets, transforms
-from tqdm import tqdm
+
+
+class Model(nn.Module):
+    def __init__(self, n_classes=100):
+        super(Model, self).__init__()
+        # Convolutional layers
+        # N x 3 x 64 x 64
+        self.conv1 = nn.Conv2d(3, 16, (5, 5), (2, 2), 2)
+        # N x 16 x 32 x 32
+        self.conv2 = nn.Conv2d(16, 32, (5, 5), (2, 2), 2)
+        # N x 32 x 16 x 16
+        self.conv3 = nn.Conv2d(32, 64, (5, 5), (2, 2), 2)
+        # N x 64 x 8 x 8
+        self.conv4 = nn.Conv2d(64, 128, (5, 5), (2, 2), 2)
+        # N x 128 x 4 x 4
+        self.conv5 = nn.Conv2d(128, 256, (5, 5), (2, 2), 2)
+        # N x 256 x 2 x 2
+        # Linear layer
+        # N x 1024
+        self.fc1 = nn.Linear(1024, 512)
+        # N x 512
+        self.fc2 = nn.Linear(512, n_classes)
+        # N x n_classes
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        x = F.relu(self.conv2(x))
+        x = F.relu(self.conv3(x))
+        x = F.relu(self.conv4(x))
+        x = F.relu(self.conv5(x))
+        x = x.view(-1, 1024)
+        x = F.relu(self.fc1(x))
+        return self.fc2(x)
 
 
 def main():
+    train_transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+    ])
     train_dataset = datasets.ImageFolder('datasets/TinyImageNet/train',
-                                         transform=transforms.Compose([transforms.ToTensor()]))
-    for i in tqdm(range(len(train_dataset))):
-        if train_dataset[i][0].size() != torch.Size([3, 64, 64]):
-            print(i)
-            break
-    else:
-        print('end')
+                                         transform=train_transform)
+    x = torch.stack([train_dataset[i][0] for i in range(100)])
+    model = Model()
+    print(model(x).size())
 
 
 if __name__ == '__main__':
