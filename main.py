@@ -1,7 +1,9 @@
 import torch
 from torch import nn
+from torch import optim
 import torch.nn.functional as F
 from torchvision import datasets, transforms
+from tqdm import tqdm
 
 
 class Model(nn.Module):
@@ -44,9 +46,19 @@ def main():
     ])
     train_dataset = datasets.ImageFolder('datasets/TinyImageNet/train',
                                          transform=train_transform)
-    x = torch.stack([train_dataset[i][0] for i in range(100)])
+    train_dataloader = torch.utils.data.DataLoader(train_dataset,
+                                                   batch_size=32,
+                                                   shuffle=True)
     model = Model()
-    print(model(x).size())
+    loss = nn.CrossEntropyLoss()
+    optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.)
+    for x, label in tqdm(train_dataloader):
+        y = model(x)
+        l = loss(y, label)
+        tqdm.write(f'{l.item()}')
+        optimizer.zero_grad()
+        l.backward()
+        optimizer.step()
 
 
 if __name__ == '__main__':
