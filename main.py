@@ -42,14 +42,15 @@ def main():
     train_dataloader = torch.utils.data.DataLoader(train_dataset,
                                                    batch_size=512,
                                                    shuffle=True)
-    model = Model().cuda()
-    criterion = nn.CrossEntropyLoss().cuda()
+    device = torch.device('cpu')
+    model = Model().to(device)
+    criterion = nn.CrossEntropyLoss().to(device)
     optimizer = optim.Adam(model.parameters(), lr=0.01)
     for _ in tqdm(range(100), desc='Epoch'):
         losses = []
         for i, (x, label) in enumerate(tqdm(train_dataloader)):
-            y = model(x.cuda())
-            loss = criterion(y, label.cuda())
+            y = model(x.to(device))
+            loss = criterion(y, label.to(device))
             losses.append(loss.item())
             optimizer.zero_grad()
             loss.backward()
